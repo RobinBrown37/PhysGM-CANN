@@ -1,0 +1,23 @@
+{
+  "date": "2026-10-23",
+  "source_commit": "7722175ba55db54fd430a7d29a4407b8f8ffe6b6",
+  "source_worktree_unchanged": true,
+  "full_regression": {
+    "command": "PHYSGM_TEST_NPU=1 TORCH_DEVICE_BACKEND_AUTOLOAD=0 .venv/bin/python -m pytest -q",
+    "passed": 17,
+    "failed": 0,
+    "seconds": 6.34
+  },
+  "upstream_preprocessing_exact_match": [
+    "input_images",
+    "input_intr",
+    "input_c2ws",
+    "pos_avg_inv",
+    "scene_scale"
+  ],
+  "cpu_only_prediction_serialization": true,
+  "uv_locked_offline_sync": "passed",
+  "compileall_and_shell_syntax": "passed",
+  "gpu_network_numerical_alignment": "not performed; GPU reference package unavailable",
+  "ascend_910c": "not tested; actual device Ascend910B3"
+}

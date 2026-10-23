@@ -1,0 +1,32 @@
+data:
+  data_path: example_data/data.txt
+  resize_h: 512
+  square_crop: true
+  num_input_frames: 4
+  scene_scale: 1.0
+
+use_amp: true
+amp_dtype: bf16
+
+model:
+  use_dinov3: true
+  dinov3_dim: 1024
+  num_layers: 24
+  patch_size: 16
+  dim: 1024
+  block_type: transformer
+  transformer:
+    head_dim: 64
+  num_global_tokens: 3
+  post_act: false
+  gaussians:
+    sh_degree: 0
+    near_plane: 0.001
+    far_plane: 2.5
+    scale_bias: -7.5
+    scale_max: -2.0
+    opacity_bias: -1.5
+    align_to_pixel: true
+    max_dist: 2.0
+    prune_ratio: 0.0
+    opacity_threshold: 0.001

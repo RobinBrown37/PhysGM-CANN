@@ -1,0 +1,12 @@
+.venv/
+.tools/
+.cache/
+__pycache__/
+.pytest_cache/
+*.py[cod]
+*.pt
+*.pth
+*.safetensors
+results/
+outputs/
+export_only_prof_dir/
