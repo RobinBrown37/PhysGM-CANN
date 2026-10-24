@@ -7,6 +7,10 @@ __pycache__/
 *.pt
 *.pth
 *.safetensors
-results/
+/results/*
+!/results/render_preview.png
 outputs/
 export_only_prof_dir/
+build/
+datasets/
+weights/

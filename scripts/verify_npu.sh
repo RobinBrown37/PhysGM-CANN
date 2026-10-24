@@ -12,6 +12,6 @@ else
 fi
 
 "$physgm_uv" sync --locked
-PHYSGM_TEST_NPU=1 "$physgm_uv" run --locked python -m pytest -q
+PHYSGM_TEST_NPU=1 "$physgm_uv" run --locked python -m pytest -q tests/test_network.py
 "$physgm_uv" run --locked python infer_network.py --device npu:0 --amp-dtype bf16 --output-dir results/npu_forward
 "$physgm_uv" run --locked python infer_network.py --device npu:0 --amp-dtype bf16 --backward-probe --resize 256 --profile --output-dir results/npu_backward

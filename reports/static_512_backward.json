@@ -1,0 +1,106 @@
+{
+  "status": "passed",
+  "mode": "image_vjp_no_training",
+  "environment": {
+    "python": "3.11.4",
+    "architecture": "aarch64",
+    "packages": {
+      "torch": "2.7.1+cpu",
+      "torch-npu": "2.7.1.post8",
+      "transformers": "4.57.1",
+      "torchvision": "0.22.1",
+      "numpy": "1.26.4"
+    },
+    "device": "npu:0",
+    "device_name": "Ascend910B3",
+    "cann_version": "9.1.0"
+  },
+  "source": "results/static_512/renderer_input.pt",
+  "source_gaussians": 1048576,
+  "renderer_parameters": {
+    "sh_degree": 0,
+    "near_plane": 0.001,
+    "far_plane": 2.5,
+    "eps2d": 0.3,
+    "background": [
+      1.0,
+      1.0,
+      1.0
+    ]
+  },
+  "first_forward_seconds": 1.1738674989974243,
+  "timed_forward_seconds": [
+    1.1738674989974243
+  ],
+  "forward_median_seconds": 1.1738674989974243,
+  "forward_p95_seconds": 1.1738674989974243,
+  "stats": {
+    "backend": "cann",
+    "input_gaussians_per_scene": 1048576,
+    "visible_per_view": [
+      232386,
+      232386,
+      232386,
+      232386
+    ],
+    "tile_intersections_per_view": [
+      375104,
+      380567,
+      374968,
+      376885
+    ],
+    "alpha_threshold": 0.00392156862745098,
+    "alpha_cap": 0.999,
+    "transmittance_threshold": 0.0001,
+    "cpu_work": [
+      "tile-count scheduling metadata"
+    ]
+  },
+  "width": 512,
+  "height": 512,
+  "views": 4,
+  "input_gaussians": 1048576,
+  "alpha_range": [
+    0.0,
+    1.0000008344650269
+  ],
+  "backward_seconds": 0.27503783100110013,
+  "gradients": {
+    "xyz": {
+      "finite": true,
+      "absolute_sum": 1.731248140335083,
+      "nonzero_elements": 696900,
+      "elements": 3145728
+    },
+    "feature": {
+      "finite": true,
+      "absolute_sum": 0.017153773456811905,
+      "nonzero_elements": 696508,
+      "elements": 3145728
+    },
+    "scale": {
+      "finite": true,
+      "absolute_sum": 0.005224263295531273,
+      "nonzero_elements": 696899,
+      "elements": 3145728
+    },
+    "rotation": {
+      "finite": true,
+      "absolute_sum": 0.011748580262064934,
+      "nonzero_elements": 929200,
+      "elements": 4194304
+    },
+    "opacity": {
+      "finite": true,
+      "absolute_sum": 0.002826934214681387,
+      "nonzero_elements": 232301,
+      "elements": 1048576
+    }
+  },
+  "memory": {
+    "process_peak_rss_bytes": 2250661888,
+    "npu_peak_allocated_bytes": 1926447616,
+    "npu_peak_reserved_bytes": 2116026368
+  },
+  "total_seconds_including_io": 6.627346866000153
+}

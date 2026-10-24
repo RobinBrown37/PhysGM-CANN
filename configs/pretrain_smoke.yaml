@@ -1,0 +1,12 @@
+_base_: pretrain_npu.yaml
+data:
+  resize_h: 256
+training:
+  train_steps: 100
+  grad_accum_steps: 1
+  lr: 0.00001
+  warmup_steps: 5
+  evaluation_every: 20
+  checkpoint_every: 50
+  visualization_every: 20
+  print_every: 1

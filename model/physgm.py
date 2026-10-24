@@ -54,11 +54,16 @@ class Processor(nn.Module):
             TransformerBlock(config.model.dim, config.model.transformer.head_dim)
             for _ in range(config.model.num_layers)
         ])
+        self.gradient_checkpointing = False
 
     def forward(self, x):
         outputs = []
         for i, block in enumerate(self.blocks):
-            x = block(x)
+            if self.gradient_checkpointing and self.training and torch.is_grad_enabled():
+                from torch.utils.checkpoint import checkpoint
+                x = checkpoint(block, x, use_reentrant=False)
+            else:
+                x = block(x)
             if i in (4, 11, 17, 23):
                 outputs.append(x)
         return outputs
@@ -232,3 +237,26 @@ def load_checkpoint(config, path: str | Path, device="cpu"):
     model.dinov3_extractor.model.requires_grad_(False)
     model.to(device)
     return model, {"strict": True, "model_entries": len(state), "train_steps_done": checkpoint.get("train_steps_done")}
+
+
+def initialize_from_dino(config, path, device="cpu"):
+    """Fresh non-DINO network using only strictly checked offline DINO weights."""
+    checkpoint = torch.load(path, map_location="cpu", weights_only=True, mmap=True)
+    source = checkpoint.get("model", checkpoint)
+    prefix = "dinov3_extractor.model."
+    state = {k[len(prefix):]: v for k, v in source.items() if k.startswith(prefix)}
+    if not state:
+        raise ValueError("No dinov3_extractor.model weights in DINO initialization checkpoint")
+    model = PhysGM(config)
+    model.dinov3_extractor.model.load_state_dict(state, strict=True)
+    # Original PhysGM initialization differs from PyTorch defaults in these heads.
+    for module in model.phys_token_decoder.modules():
+        if isinstance(module, nn.Linear):
+            nn.init.normal_(module.weight, std=.02)
+            if module.bias is not None:
+                nn.init.zeros_(module.bias)
+    for head in (model.E_token_decoder, model.nu_token_decoder):
+        nn.init.normal_(head[-1].weight, std=.01)
+        nn.init.zeros_(head[-1].bias)
+    model.to(device)
+    return model, {"mode": "fresh_non_dino", "strict_dino": True, "dino_entries": len(state)}

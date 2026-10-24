@@ -1,0 +1,15 @@
+{
+  "sources": {
+    "vgg16_full.pth": "https://download.pytorch.org/models/vgg16-397923af.pth",
+    "vgg_lpips.pt": "https://raw.githubusercontent.com/richzhang/PerceptualSimilarity/master/lpips/weights/v0.1/vgg.pth"
+  },
+  "source_sha256": {
+    "vgg16_full.pth": "397923af8e79cdbb6a7127f12361acd7a2f83e06b05044ddf496e83de57a5bf0",
+    "vgg_lpips.pt": "a78928a0af1e5f0fcb1f3b9e8f8c3a2a5a3de244d830ad5c1feddc79b8432868"
+  },
+  "files": {
+    "vgg16_features.pt": "f6c95a8f04846e3b5552a2b1d414c75d04fad08280c50e748760a1dfd5370096",
+    "vgg_lpips.pt": "a78928a0af1e5f0fcb1f3b9e8f8c3a2a5a3de244d830ad5c1feddc79b8432868"
+  },
+  "formula": "kiui==0.2.18 VGG LPIPS, v0.1 linear calibration"
+}

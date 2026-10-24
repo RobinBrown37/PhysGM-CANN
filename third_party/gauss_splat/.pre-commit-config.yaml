@@ -1,0 +1,25 @@
+repos:
+  # C++/C code formatting with clang-format
+  - repo: https://gitcode.com/pre-commit-clang/mirrors-clang-format
+    rev: v18.1.8
+    hooks:
+      - id: clang-format
+        types_or: [file]
+        files: \.(c|h|cpp|hpp|cc|hh|cxx|hxx|asc)$
+        exclude: ^(tests/python/aclrt_launch_kernel/stub_files/|include/utils/)
+        args:
+          - "--style=file"
+          - "--verbose"
+          - "-i"
+
+  # OAT compliance check (Open Source Audit Tool)
+  - repo: local
+    hooks:
+      - id: oat-check
+        name: OAT Compliance Check
+        entry: bash scripts/oat_check.sh
+        language: system
+        pass_filenames: true
+        types: [file]
+        stages: [pre-commit]
+        verbose: true

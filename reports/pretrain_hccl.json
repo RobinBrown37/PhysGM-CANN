@@ -1,0 +1,283 @@
+{
+  "status": "passed",
+  "environment": {
+    "python": "3.11.4",
+    "architecture": "aarch64",
+    "packages": {
+      "torch": "2.7.1+cpu",
+      "torch-npu": "2.7.1.post8",
+      "transformers": "4.57.1",
+      "torchvision": "0.22.1",
+      "numpy": "1.26.4"
+    },
+    "device": "npu:0",
+    "device_name": "Ascend910B3",
+    "cann_version": "9.1.0"
+  },
+  "world_size": 1,
+  "deterministic": true,
+  "initialization": {
+    "strict": true,
+    "model_entries": 645,
+    "train_steps_done": 456000,
+    "mode": "warmstart_weights_only"
+  },
+  "config": {
+    "seed": 1111,
+    "deterministic": true,
+    "use_amp": true,
+    "amp_dtype": "bf16",
+    "data": {
+      "data_path": "datasets/physassets_subset/train.txt",
+      "validation_path": "datasets/physassets_subset/validation.txt",
+      "resize_h": 256,
+      "square_crop": true,
+      "num_input_frames": 4,
+      "num_target_frames": 8,
+      "target_has_input": true,
+      "random_crop": 1.0,
+      "scene_scale": 1.0
+    },
+    "model": {
+      "use_dinov3": true,
+      "dinov3_dim": 1024,
+      "num_layers": 24,
+      "patch_size": 16,
+      "dim": 1024,
+      "block_type": "transformer",
+      "transformer": {
+        "head_dim": 64
+      },
+      "num_global_tokens": 3,
+      "post_act": false,
+      "gaussians": {
+        "sh_degree": 0,
+        "near_plane": 0.001,
+        "far_plane": 2.5,
+        "scale_bias": -7.5,
+        "scale_max": -2.0,
+        "opacity_bias": -1.5,
+        "align_to_pixel": true,
+        "max_dist": 2.0,
+        "prune_ratio": 0.0,
+        "opacity_threshold": 0.001
+      }
+    },
+    "training": {
+      "batch_size_per_npu": 1,
+      "train_steps": 100,
+      "grad_accum_steps": 2,
+      "lr": 1e-05,
+      "beta1": 0.9,
+      "beta2": 0.95,
+      "weight_decay": 0.05,
+      "warmup_steps": 0,
+      "scheduler_type": "cosine",
+      "grad_clip_norm": 30.0,
+      "num_workers": 0,
+      "prefetch_factor": 2,
+      "pin_memory": false,
+      "l2_loss": 1.0,
+      "opacity_loss": 0.1,
+      "physical_loss": 0.1,
+      "E_loss": 0.01,
+      "nu_loss": 0.01,
+      "lpips_loss": 0.0,
+      "lpips_weights": "weights/lpips",
+      "render_backend": "cann",
+      "checkpoint_transformer": false,
+      "checkpoint_renderer": false,
+      "fixed_batch": false,
+      "print_every": 1,
+      "evaluation_every": 20,
+      "checkpoint_every": 50,
+      "visualization_every": 20,
+      "tensorboard": true,
+      "max_overflow_windows": 100
+    }
+  },
+  "signature": "eb950cefc2b552a3b8f0a4879226e38348d35eb418ecb3a315fd1c6af854b4d4",
+  "trainable_parameters": 334816530,
+  "start_global_step": 0,
+  "dino_initial_sha256": "0e35f53539f0915475f6d40ab40ba1d46fcc6b3259d10204b22f8bd5b3650025",
+  "dataloader": {
+    "requested_workers": 0,
+    "actual_workers": 0,
+    "prefetch_factor": null,
+    "batch_transport_bytes": 12584076,
+    "shared_memory_available_bytes": null
+  },
+  "global_step": 1,
+  "micro_step": 2,
+  "skipped_windows": 0,
+  "updates": [
+    {
+      "global_step": 1,
+      "micro_step": 2,
+      "E_loss": 2.2127621173858643,
+      "E_mse": 0.855926513671875,
+      "E_nll": 1.3568356037139893,
+      "grad_norm": 0.9960495233535767,
+      "l2_loss": 0.007422965951263905,
+      "lr": 9.997533197747543e-06,
+      "material_accuracy": 1.0,
+      "nu_loss": 0.805590033531189,
+      "nu_mse": 0.06008213758468628,
+      "nu_nll": 0.7455078959465027,
+      "opacity_loss": 0.014728972688317299,
+      "phys_loss": 0.03978530690073967,
+      "psnr": 22.143619537353516,
+      "total_loss": 0.043057914823293686,
+      "forward_seconds": 2.005357620997529,
+      "backward_seconds": 0.6484943850009586,
+      "step_seconds": 0.15776340699812863,
+      "epoch": 0,
+      "cursor": 2,
+      "samples": [
+        [
+          0,
+          1,
+          5
+        ]
+      ]
+    }
+  ],
+  "validation": [
+    {
+      "global_step": 1,
+      "l2_loss": 0.008082192798610777,
+      "opacity_loss": 0.011668457416817546,
+      "psnr": 22.182259559631348,
+      "phys_loss": 0.15878451988101006,
+      "material_accuracy": 0.5,
+      "E_nll": 2.4232953786849976,
+      "E_mse": 2.3464053124189377,
+      "E_loss": 4.769700586795807,
+      "nu_nll": 0.9218186438083649,
+      "nu_mse": 0.26651222072541714,
+      "nu_loss": 1.1883308440446854,
+      "total_loss": 0.08470780216157436
+    }
+  ],
+  "audits": [
+    {
+      "global_step": 1,
+      "groups": {
+        "global_token_init": {
+          "parameters_with_grad": 1,
+          "absolute_sum": 16.501495361328125
+        },
+        "ray_encoder": {
+          "parameters_with_grad": 8,
+          "absolute_sum": 43.905503585003316
+        },
+        "dino_proj": {
+          "parameters_with_grad": 1,
+          "absolute_sum": 164.453369140625
+        },
+        "input_layernorm": {
+          "parameters_with_grad": 1,
+          "absolute_sum": 0.21960198879241943
+        },
+        "dpt_head": {
+          "parameters_with_grad": 62,
+          "absolute_sum": 120.02398504043231
+        },
+        "processor": {
+          "parameters_with_grad": 144,
+          "absolute_sum": 4238.158290141728
+        },
+        "phys_token_decoder": {
+          "parameters_with_grad": 2,
+          "absolute_sum": 2.4417619183659554
+        },
+        "E_token_decoder": {
+          "parameters_with_grad": 5,
+          "absolute_sum": 8.470710273832083
+        },
+        "nu_token_decoder": {
+          "parameters_with_grad": 5,
+          "absolute_sum": 23.95378663763404
+        }
+      },
+      "gaussians": {
+        "xyz": {
+          "finite": true,
+          "absolute_sum": 0.8659977912902832
+        },
+        "feature": {
+          "finite": true,
+          "absolute_sum": 0.0014860274968668818
+        },
+        "scale": {
+          "finite": true,
+          "absolute_sum": 0.0027147773653268814
+        },
+        "rotation": {
+          "finite": true,
+          "absolute_sum": 0.004473845940083265
+        },
+        "opacity": {
+          "finite": true,
+          "absolute_sum": 0.0022996440529823303
+        }
+      },
+      "parameter_deltas": {
+        "global_token_init": {
+          "parameter": "global_token_init",
+          "sample_index": 2213,
+          "delta": -9.993091225624084e-06
+        },
+        "ray_encoder": {
+          "parameter": "ray_encoder.patch_embed.1.weight",
+          "sample_index": 995314,
+          "delta": -1.0003335773944855e-05
+        },
+        "dino_proj": {
+          "parameter": "dino_proj.weight",
+          "sample_index": 36955,
+          "delta": -1.0007061064243317e-05
+        },
+        "input_layernorm": {
+          "parameter": "input_layernorm.weight",
+          "sample_index": 698,
+          "delta": -1.0013580322265625e-05
+        },
+        "dpt_head": {
+          "parameter": "dpt_head.norm.weight",
+          "sample_index": 618,
+          "delta": -1.0013580322265625e-05
+        },
+        "processor": {
+          "parameter": "processor.blocks.0.norm1.weight",
+          "sample_index": 490,
+          "delta": 1.0013580322265625e-05
+        },
+        "phys_token_decoder": {
+          "parameter": "phys_token_decoder.0.weight",
+          "sample_index": 359,
+          "delta": 1.0013580322265625e-05
+        },
+        "E_token_decoder": {
+          "parameter": "E_token_decoder.0.weight",
+          "sample_index": 25,
+          "delta": -1.0013580322265625e-05
+        },
+        "nu_token_decoder": {
+          "parameter": "nu_token_decoder.0.weight",
+          "sample_index": 769,
+          "delta": 1.0013580322265625e-05
+        }
+      }
+    }
+  ],
+  "best_validation": 0.08470780216157436,
+  "dino_final_sha256": "0e35f53539f0915475f6d40ab40ba1d46fcc6b3259d10204b22f8bd5b3650025",
+  "dino_unchanged": true,
+  "memory": {
+    "process_peak_rss_bytes": 13438504960,
+    "npu_peak_allocated_bytes": 9185396736,
+    "npu_peak_reserved_bytes": 9948889088
+  },
+  "elapsed_seconds": 30.86886020300153
+}
