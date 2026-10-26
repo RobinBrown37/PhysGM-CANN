@@ -51,15 +51,30 @@ class StaticGaussianRenderer(nn.Module):
         self._geometry = {}
 
     def forward(self, gaussians, c2ws, intr, *, width, height, background=(1., 1., 1.)):
+        return self._render(gaussians, c2ws, intr, width=width, height=height, background=background)
+
+    def render_precomputed(self, means, covariance, colors, opacities, c2ws, intr, *, width, height, background=(1., 1., 1.)):
+        """World covariance / RGB / probability opacity, without activation or factorization."""
+        return self._render(dict(xyz=means, covariance=covariance, colors=colors, opacity=opacities),
+                            c2ws, intr, width=width, height=height, background=background, precomputed=True)
+
+    def _render(self, gaussians, c2ws, intr, *, width, height, background, precomputed=False):
         means = gaussians["xyz"]
         if means.ndim != 3 or means.shape[-1] != 3:
             raise ValueError("Gaussian xyz must have shape [B,N,3]")
         B, N, _ = means.shape
         shapes = {"feature": (B, N, (self.sh_degree+1)**2, 3), "scale": (B, N, 3), "rotation": (B, N, 4), "opacity": (B, N, 1)}
+        if precomputed:
+            shapes = {'covariance': (B, N, 3, 3), 'colors': (B, N, 3), 'opacity': (B, N, 1)}
         for key, shape in shapes.items():
             tensor = gaussians[key]
             if tensor.shape != shape or tensor.device != means.device or not tensor.is_floating_point():
                 raise ValueError(f"{key} must have shape {shape}, floating dtype and the Gaussian device")
+        if precomputed:
+            if not all(bool(torch.isfinite(gaussians[k]).all()) for k in ('xyz',*shapes)):
+                raise ValueError('Precomputed Gaussian inputs must be finite')
+            if bool(((gaussians['opacity']<0)|(gaussians['opacity']>1)).any()):
+                raise ValueError('Precomputed opacity must be a probability in [0,1]')
         if c2ws.ndim != 4 or c2ws.shape[0] != B or c2ws.shape[-2:] != (4, 4) or intr.shape != (*c2ws.shape[:2], 4):
             raise ValueError("Target c2ws/intr must be [B,T,4,4] / [B,T,4]")
         if c2ws.device != means.device or intr.device != means.device:
@@ -93,7 +108,7 @@ class StaticGaussianRenderer(nn.Module):
                 item = {k: v[batch] for k, v in g.items()}
                 for view in range(T):
                     p = project(item, cameras[batch, view], intrinsics[batch, view], width, height,
-                                self.near_plane, self.far_plane, self.sh_degree, self.eps2d)
+                                self.near_plane, self.far_plane, self.sh_degree, self.eps2d, precomputed=precomputed)
                     count = p["means2d"].shape[0]
                     visible.append(count)
                     hits = None

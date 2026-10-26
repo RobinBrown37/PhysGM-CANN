@@ -392,6 +392,10 @@ dependencies = [
 dev = [
     { name = "pytest" },
 ]
+mpm = [
+    { name = "pymcubes" },
+    { name = "scipy" },
+]
 render-build = [
     { name = "attrs" },
     { name = "cloudpickle" },
@@ -428,6 +432,10 @@ requires-dist = [
 
 [package.metadata.requires-dev]
 dev = [{ name = "pytest", specifier = ">=8.3,<9" }]
+mpm = [
+    { name = "pymcubes", specifier = "==0.1.6" },
+    { name = "scipy", specifier = ">=1.11,<1.16" },
+]
 render-build = [
     { name = "attrs" },
     { name = "cloudpickle" },
@@ -523,6 +531,22 @@ source = { registry = "https://pypi.org/simple" }
 sdist = { url = "https://files.pythonhosted.org/packages/49/2e/ced460408999b33da6b31b0021b0f37d329e202d4169aeb164493778f25b/pygments-2.21.0.tar.gz", hash = "sha256:610ca751c9bc2492b38eb9a38a7fbc93edbbb2d7182edaf34e66ae493dee5c8c", size = 5005329, upload-time = "2026-08-17T08:02:48.824Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/71/46/17f022dd3e953bf20a04a028a21ec746d942f8d2af30fa0f124fa0e6a684/pygments-2.21.0-py3-none-any.whl", hash = "sha256:2363c69b61c4a97c838da3b130dcd6468f4848992b21a82f2a63ec34377137d9", size = 1250147, upload-time = "2026-08-17T08:02:44.912Z" },
+]
+
+[[package]]
+name = "pymcubes"
+version = "0.1.6"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "numpy" },
+    { name = "scipy" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/df/fb/8660bc09b05e5b7209377a476e937f36c2e4353a5300e6c71283fd6f8c2b/pymcubes-0.1.6.tar.gz", hash = "sha256:1a72476a22a4c98907acec0c5ef8d46f4451fa987c7efeaf970990775826ed8b", size = 109395, upload-time = "2024-07-03T23:14:43.434Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/62/d3/4eb02520fd20558ec581af2bd5f670fd58c31c5630d90a7e30f1be501222/PyMCubes-0.1.6-cp311-cp311-macosx_10_9_x86_64.whl", hash = "sha256:e859a7aaa97bfc909079ce1ecbc12f0bc61b49b8b01ee0d59eaabf9a7f266a9f", size = 54338, upload-time = "2024-07-03T23:17:15.464Z" },
+    { url = "https://files.pythonhosted.org/packages/3a/e8/c39c7eedb7a2b514092ea8017b11f1c3ad3cc9398e5afa7568739a859447/PyMCubes-0.1.6-cp311-cp311-macosx_11_0_arm64.whl", hash = "sha256:8f1246d4ef9dee648a111060aac95f0b99f9b36c937436e75af4cae57b5f50f7", size = 52324, upload-time = "2024-07-03T23:15:26.161Z" },
+    { url = "https://files.pythonhosted.org/packages/2a/e6/5796cf17a909d6048c0c2cfd70577029fb39c15e5aa098df5336b316a6c7/PyMCubes-0.1.6-cp311-cp311-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:323b1d6454e3092ce2ba42c0ce69a753cb646fbda33d5274f03514a68f4441c8", size = 336818, upload-time = "2024-07-03T23:15:54.554Z" },
+    { url = "https://files.pythonhosted.org/packages/bd/4c/30cfeb335589ddcb72db0f4f68e5fce703ada8d05e4c2b37b5125bbae1a9/PyMCubes-0.1.6-cp311-cp311-win_amd64.whl", hash = "sha256:4e326cba1471047567e016c39fa2b4934dd451e9f1feec63a35e23bbcab1d34c", size = 50006, upload-time = "2024-07-03T23:18:52.403Z" },
 ]
 
 [[package]]

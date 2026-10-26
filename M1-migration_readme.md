@@ -1,12 +1,13 @@
 # PhysGM-CANN 迁移说明
 
-以 PhysGM `7722175ba55db54fd430a7d29a4407b8f8ffe6b6` 为基线，在独立项目中使用 PyTorch＋TorchNPU 完成神经网络、静态高斯渲染和监督预训练代码迁移。原仓 `/mnt/workspace/PhysGM` 保持不变。
+以 PhysGM `7722175ba55db54fd430a7d29a4407b8f8ffe6b6` 为基线，在独立项目中使用 PyTorch＋TorchNPU 完成神经网络、静态高斯渲染、监督预训练及 MPM 前向仿真迁移。原仓 `/mnt/workspace/PhysGM` 保持不变。
 
 | 阶段 | 范围 | 当前状态 |
 | --- | --- | --- |
 | [M1 神经网络迁移](#m1-神经网络迁移) | 多视图图像与相机 → Gaussian、物理属性 | 真实权重推理与网络梯度探针通过 |
 | [M2 静态高斯渲染迁移](#m2-静态高斯渲染迁移) | Gaussian 与目标相机 → RGB/alpha，图像梯度回传网络 | 真实渲染、属性反向与网络连接验证通过 |
 | [M3 监督预训练迁移](#m3-监督预训练迁移) | 真实图像与物理标签 → 联合损失 → 有效更新、验证与完整恢复 | 100步短训、完整恢复与53项回归通过 |
+| [M4 MPM 前向仿真迁移](#m4-mpm-前向仿真迁移) | 六种材料、边界条件、粒子/网格传输 → 动态 Gaussian 渲染 | 数值、性能与完整 cake 结果见 M4 验收报告 |
 
 ![cake 静态高斯渲染预览](results/render_preview.png)
 
@@ -223,3 +224,44 @@ uv run --locked --group train python train_pretrain.py \
 完整命令、数据接口、从头初始化、多卡和恢复约定见 [M3训练说明](training/README.md)；[实施计划](PRETRAIN_PLAN.md)与[验收报告](PRETRAIN_REPORT.md)记录实际测试、步数与限制。全矩阵复验命令为 `bash scripts/verify_pretrain.sh`。
 
 本次正式短训产物位于 `results/pretrain_final/`，可恢复断点为 `last.pt`；[第100步真实目标/预测对照](results/pretrain_final/vis_000100/comparison.png)与[完整验收摘要](reports/pretrain_verification.json)可直接查看。连续训练与中断恢复后的全部梯度、参数更新逐元素一致。真实双NPU及同批GPU数值对齐仍待独立验收。
+
+## M4 MPM 前向仿真迁移
+
+覆盖原仓 jelly、metal、sand、foam、snow、plasticine 六种实际材料分支，以及 bounding box、surface collider、移动 cuboid、粒子冲量、平移/旋转速度约束和顺序释放。物理状态使用 FP32；本阶段仅前向仿真，`step()` 不建立自动微分图。
+
+三个 Ascend C 算子族分别负责 3×3 Jacobi 分解、P2G 贡献生成、G2P/粒子更新。P2G 累加与 G2P 网格读取继续使用现有 IndexAdd/gather；重力、边界和材料公式使用 TorchNPU。算子共享库位于 `build/mpm/`，直接在当前 NPU stream 调用，不安装系统 OPP 包，也不覆盖 M2 渲染扩展。
+
+```bash
+source /home/developer/Ascend/cann-9.1.0/set_env.sh
+uv sync --locked --group mpm --group render-build --group train
+.venv/bin/python scripts/build_mpm.py
+
+# 一次性 CPU 初始化：完整 Gaussian、密度场、平滑、内部填充及体积
+.venv/bin/python simulate_mpm.py --prepare-only \
+  --prediction-pack results/npu_forward/prediction.pt \
+  --config configs/mpm/cake.json --output-dir results/mpm_cake
+
+# 复用相同初始粒子，默认 NPU + 原生传输 + upstream 物理模式
+.venv/bin/python simulate_mpm.py \
+  --initial-state results/mpm_cake/initial_state.pt \
+  --output-dir results/mpm_cake
+
+# 从完整状态继续仿真，帧数表示额外帧数
+.venv/bin/python simulate_mpm.py \
+  --initial-state results/mpm_cake/final_state.pt \
+  --frames 1 --output-dir results/mpm_resume
+```
+
+默认 cake 使用 opacity > 0.02 的全部 213532 个 Gaussian，加上固定种子实际生成的 5884 个内部粒子，共 219416 粒子。配置保留 100³ 网格、范围2、dt=2e-4、200子步/帧、50帧；渲染为首个 M1 输入相机、512²、白背景、25 FPS。E/ν直接使用 M1 推理导出的物理单位，训练标签的归一化方式不用于仿真。
+
+`--physics-mode upstream` 保留原仓实际行为，包括 slip/friction 最终清零网格速度，以及 metal/snow 的原实现。`corrected` 仅修复碰撞速度赋值和顺序释放的层数/时间；预览与报告明确标记模式，初始状态可共用，已运行状态不允许跨模式恢复。
+
+`--transfer-backend torch` 显式运行张量传输基线；`--svd-backend torch` 使用本机设备 AI CPU SVD，仅用于数值/性能对照。CPU 小场景需指定 `--device cpu`，可加 `--steps`、`--no-render`；密集 CPU renderer 有规模保护。`--frames`/`--steps` 是明确记录的调试覆盖，不作为完整50帧验收结果。
+
+初始化/填充、相机与导出在 CPU 完成；仿真子步的粒子、网格和材料状态留在 NPU。原预测含极薄 Gaussian，FP32 协方差已具有微小舍入误差；验证检查尺度归一化主子式与行列式的半正定性（容差1e-6），不修改或截断协方差。
+
+输出包括 `initial_state.pt`、`latest_state.pt`、`final_state.pt`、`frames/`、`simulation.mp4`、`preview.png`、逐帧诊断和环境/性能报告。状态包含粒子ID、材料内部变量、选择掩码、边界状态与时间。动态渲染接收完整协方差/RGB/opacity，不重新分解尺度/四元数，不渲染内部填充粒子。
+
+复验命令：`bash scripts/verify_mpm.sh`。实施依据见 [M4计划](MPM_PLAN.md)，实际结果见 [M4验收报告](MPM_REPORT.md) 和 [结构化验收摘要](reports/mpm_verification.json)。原 CUDA/Warp 同输入对齐等待参考包单独验收。
+
+已完成完整50帧/10000子步，约381秒，峰值分配1.34 GiB；41项MPM与原有53项回归通过。查看 [动态视频](results/mpm_cake/simulation.mp4)、[原相机预览](results/mpm_cake/preview.png) 和 [扩大视野的初末对照](results/mpm_cake/overview.png)。后者保留相机姿态、显式将焦距乘0.65，主要视频仍使用原始M1内参。

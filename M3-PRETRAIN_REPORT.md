@@ -1,4 +1,4 @@
-# M3 监督预训练迁移验收报告
+M3-# M3 监督预训练迁移验收报告
 
 日期：2026-10-24。环境：Ascend910B3 64 GB、CANN 9.1.0、Python 3.11、PyTorch 2.7.1+cpu、TorchNPU 2.7.1.post8。完整实施约定见 [PRETRAIN_PLAN.md](PRETRAIN_PLAN.md)，使用方法见 [training/README.md](training/README.md)。
 

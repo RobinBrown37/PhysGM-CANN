@@ -16,8 +16,11 @@ def quaternion_matrix(quaternion):
     ), -1).reshape(-1, 3, 3)
 
 
-def sh_colors(features, means, camera_origin, degree):
-    direction = F.normalize(means - camera_origin, dim=-1)
+def sh_colors(features, means, camera_origin, degree, direction_rotation=None):
+    direction = means - camera_origin
+    if direction_rotation is not None:
+        direction = (direction_rotation @ direction.unsqueeze(-1)).squeeze(-1)
+    direction = F.normalize(direction, dim=-1)
     x, y, z = direction.unbind(-1)
     bases = [torch.ones_like(x) * 0.28209479177387814]
     if degree >= 1:
@@ -36,7 +39,7 @@ def sh_colors(features, means, camera_origin, degree):
     return ((features[:, :len(bases)] * torch.stack(bases, -1).unsqueeze(-1)).sum(1) + 0.5).clamp_min(0)
 
 
-def project(gaussians, c2w, intr, width, height, near, far, degree, eps2d=0.3):
+def project(gaussians, c2w, intr, width, height, near, far, degree, eps2d=0.3, precomputed=False):
     """Return compact visible attributes; indexing preserves active gradients."""
     means = gaussians["xyz"]
     # Camera poses are rigid transforms. An explicit inverse avoids the generic
@@ -44,17 +47,22 @@ def project(gaussians, c2w, intr, width, height, near, far, degree, eps2d=0.3):
     R = c2w[:3, :3].T
     translation = -(R @ c2w[:3, 3])
     camera_means = means @ R.T + translation
-    opacity = gaussians["opacity"].squeeze(-1).sigmoid()
+    opacity = gaussians["opacity"].squeeze(-1)
+    if not precomputed:
+        opacity = opacity.sigmoid()
     # These are discrete visibility decisions, as in a splatting rasterizer.
     keep = ((camera_means[:, 2] > near) & (camera_means[:, 2] < far)
             & (opacity >= 1/255)).nonzero().squeeze(-1)
     camera_means = camera_means[keep]
     xyz = means[keep]
-    quats = gaussians["rotation"][keep]
-    scales = gaussians["scale"][keep].exp()
-    rotation = quaternion_matrix(quats)
-    matrix = rotation * scales.unsqueeze(-2)
-    covariance = matrix @ matrix.transpose(-1, -2)
+    if precomputed:
+        covariance = gaussians['covariance'][keep]
+    else:
+        quats = gaussians["rotation"][keep]
+        scales = gaussians["scale"][keep].exp()
+        rotation = quaternion_matrix(quats)
+        matrix = rotation * scales.unsqueeze(-2)
+        covariance = matrix @ matrix.transpose(-1, -2)
     covariance = R @ covariance @ R.T
     tx, ty, tz = camera_means.unbind(-1)
     fx, fy, cx, cy = intr.unbind(-1)
@@ -70,7 +78,7 @@ def project(gaussians, c2w, intr, width, height, near, far, degree, eps2d=0.3):
     determinant = a*d-b*b
     conics = torch.stack((d, -b, a), -1) / determinant.unsqueeze(-1)
     means2d = torch.stack((fx*ux+cx, fy*uy+cy), -1)
-    colors = sh_colors(gaussians["feature"][keep], xyz, c2w[:3, 3], degree)
+    colors = gaussians['colors'][keep] if precomputed else sh_colors(gaussians["feature"][keep], xyz, c2w[:3, 3], degree)
     return {
         "means2d": means2d, "conics": conics, "opacity": opacity[keep],
         "colors": colors, "depths": tz,

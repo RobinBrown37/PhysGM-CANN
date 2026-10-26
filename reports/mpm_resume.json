@@ -1,0 +1,73 @@
+{
+  "status": "passed",
+  "environment": {
+    "python": "3.11.4",
+    "architecture": "aarch64",
+    "packages": {
+      "torch": "2.7.1+cpu",
+      "torch-npu": "2.7.1.post8",
+      "transformers": "4.57.1",
+      "torchvision": "0.22.1",
+      "numpy": "1.26.4"
+    },
+    "device": "npu:0",
+    "device_name": "Ascend910B3",
+    "cann_version": "9.1.0"
+  },
+  "physics_mode": "upstream",
+  "input_step": 10000,
+  "final_step": 10008,
+  "tolerance": 0.001,
+  "normalized_errors": {
+    "x": 7.944117030866948e-10,
+    "volume": 0.0,
+    "initial_cov": 0.0,
+    "v": 3.88757780456217e-06,
+    "C": 6.677102646790445e-05,
+    "stress": 2.2581325538340025e-05,
+    "F": 3.95404375908015e-09,
+    "F_trial": 8.563240783132642e-09,
+    "Jp": 0.0,
+    "cov": 0.0,
+    "E": 0.0,
+    "nu": 0.0,
+    "density": 0.0,
+    "yield_stress": 0.0,
+    "mu": 0.0,
+    "lam": 0.0,
+    "mass": 0.0
+  },
+  "validation": {
+    "x_absmax": 1.5013917684555054,
+    "v_absmax": 0.04786186292767525,
+    "F_trial_absmax": 1.6844760179519653,
+    "stress_absmax": 193115.8125,
+    "mu_absmax": 161071.328125,
+    "lam_absmax": 3194582.75,
+    "yield_stress_absmax": 0.0,
+    "particle_count": 219416,
+    "particle_mass": 461.35986328125,
+    "grid_mass": 461.3599853515625,
+    "mass_relative_error": 2.645880628449567e-07,
+    "covariance_psd_fp32": true,
+    "covariance_normalized_minor_min": -2.384185791015625e-07,
+    "covariance_normalized_det_min": -6.098707672208548e-08
+  },
+  "render_stats": {
+    "backend": "cann",
+    "input_gaussians_per_scene": 213532,
+    "visible_per_view": [
+      213532
+    ],
+    "tile_intersections_per_view": [
+      252571
+    ],
+    "alpha_threshold": 0.00392156862745098,
+    "alpha_cap": 0.999,
+    "transmittance_threshold": 0.0001,
+    "cpu_work": [
+      "tile-count scheduling metadata"
+    ]
+  },
+  "gaussian_ids_preserved": true
+}

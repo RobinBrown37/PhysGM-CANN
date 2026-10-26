@@ -9,6 +9,11 @@ __pycache__/
 *.safetensors
 /results/*
 !/results/render_preview.png
+!/results/mpm_cake/
+/results/mpm_cake/*
+!/results/mpm_cake/preview.png
+!/results/mpm_cake/overview.png
+!/results/mpm_cake/simulation.mp4
 outputs/
 export_only_prof_dir/
 build/

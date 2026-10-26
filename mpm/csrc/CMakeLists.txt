@@ -1,0 +1,7 @@
+cmake_minimum_required(VERSION 3.19)
+project(physgm_mpm LANGUAGES C CXX)
+set(SOC_VERSION "Ascend910B3" CACHE STRING "Target Ascend SoC")
+set(ASCEND_CANN_PACKAGE_PATH "$ENV{ASCEND_HOME_PATH}" CACHE PATH "CANN toolkit")
+include(${ASCEND_CANN_PACKAGE_PATH}/aarch64-linux/tikcpp/ascendc_kernel_cmake/ascendc.cmake)
+ascendc_library(physgm_mpm SHARED svd.cpp transfer.cpp)
+ascendc_compile_options(physgm_mpm PRIVATE -O2)

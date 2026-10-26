@@ -1,0 +1,10 @@
+{
+  "soc": "Ascend910B3",
+  "toolkit": "/home/developer/Ascend/cann-9.1.0",
+  "seconds": 58.86759390400039,
+  "operator_families": [
+    "svd3x3",
+    "p2g_contributions",
+    "g2p_advect"
+  ]
+}

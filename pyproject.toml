@@ -20,6 +20,7 @@ dependencies = [
 [dependency-groups]
 dev = ["pytest>=8.3,<9"]
 train = ["tensorboard==2.20.0"]
+mpm = ["PyMCubes==0.1.6", "scipy>=1.11,<1.16"]
 render-build = [
     "setuptools>=69,<81", "wheel", "cmake>=3.19,<5", "ninja",
     "attrs", "decorator", "scipy>=1.11,<1.16", "cloudpickle", "psutil",

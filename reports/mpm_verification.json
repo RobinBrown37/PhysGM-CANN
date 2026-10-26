@@ -1,0 +1,206 @@
+{
+  "status": "passed",
+  "environment": {
+    "python": "3.11.4",
+    "architecture": "aarch64",
+    "packages": {
+      "torch": "2.7.1+cpu",
+      "torch-npu": "2.7.1.post8",
+      "transformers": "4.57.1",
+      "torchvision": "0.22.1",
+      "numpy": "1.26.4"
+    },
+    "device": "npu:0",
+    "device_name": "Ascend910B3",
+    "cann_version": "9.1.0"
+  },
+  "physics_mode": "upstream",
+  "tests": {
+    "mpm_cpu": "27 passed, 14 NPU-only skipped",
+    "mpm_npu": "41 passed",
+    "existing_npu_regression": "53 passed"
+  },
+  "operator_families": 3,
+  "native_kernel_execution": {
+    "physgm_svd_0": "KERNEL_MIX_AIC",
+    "physgm_p2g_2": "KERNEL_MIX_AIC",
+    "physgm_g2p_1": "KERNEL_MIX_AIC"
+  },
+  "profiled_aicpu_tasks": 0,
+  "svd": {
+    "environment": {
+      "python": "3.11.4",
+      "architecture": "aarch64",
+      "packages": {
+        "torch": "2.7.1+cpu",
+        "torch-npu": "2.7.1.post8",
+        "transformers": "4.57.1",
+        "torchvision": "0.22.1",
+        "numpy": "1.26.4"
+      },
+      "device": "npu:0",
+      "device_name": "Ascend910B3",
+      "cann_version": "9.1.0"
+    },
+    "cases": 2053,
+    "reconstruction_max": 2.9933290476161033e-07,
+    "orthogonality_max": 5.052569781106813e-07,
+    "det_u_min": 0.9999996029550269,
+    "det_v_min": 0.999999755275905,
+    "timings": {
+      "native_128": 0.0007418189998134039,
+      "torch_128": 0.0026884710023296066,
+      "native_8192": 0.0007430990008288063,
+      "torch_8192": 0.019756439000047976,
+      "native_65536": 0.0018965710005431902,
+      "torch_65536": 0.15446716800215654,
+      "native_200000": 0.005245880998700159,
+      "torch_200000": 0.47000038099940866
+    }
+  },
+  "full_scale_benchmark": {
+    "torch": {
+      "particles": 219416,
+      "transfer_backend": "torch",
+      "median_seconds": 0.07693886099878,
+      "p95_seconds": 0.0770588420018612,
+      "samples": [
+        0.07701784100208897,
+        0.0770588420018612,
+        0.07697608099988429,
+        0.07693886099878,
+        0.07690661000015098,
+        0.07693712099717231,
+        0.0769320899999002
+      ],
+      "stages": {
+        "constitutive": 0.011982007999904454,
+        "p2g": 0.02804722500150092,
+        "grid_and_boundaries": 0.001175883000541944,
+        "g2p": 0.03543641999931424
+      },
+      "process_peak_rss_bytes": 2028003328,
+      "npu_peak_allocated_bytes": 949253120,
+      "npu_peak_reserved_bytes": 1610612736
+    },
+    "native": {
+      "particles": 219416,
+      "transfer_backend": "native",
+      "median_seconds": 0.03850648599836859,
+      "p95_seconds": 0.03866472799927578,
+      "samples": [
+        0.038421654997364385,
+        0.038553375998162664,
+        0.03866472799927578,
+        0.03858802700051456,
+        0.038443145000201184,
+        0.03849788499792339,
+        0.03850648599836859
+      ],
+      "stages": {
+        "constitutive": 0.011987959001999116,
+        "p2g": 0.014678710002044681,
+        "grid_and_boundaries": 0.0011684230012178887,
+        "g2p": 0.010440760997880716
+      },
+      "process_peak_rss_bytes": 2029625344,
+      "npu_peak_allocated_bytes": 436846080,
+      "npu_peak_reserved_bytes": 1610612736
+    }
+  },
+  "full_step_speedup": 1.9980753632528214,
+  "cake": {
+    "gaussians": 213532,
+    "filled_particles": 5884,
+    "simulation_particles": 219416,
+    "final_step": 10000,
+    "final_time": 1.9999999999998124,
+    "run_seconds": 381.347071547003,
+    "solver_seconds": 373.89715746700676,
+    "render_seconds": 3.401319673001126,
+    "max_mass_relative_error": 3.9688209426743505e-07,
+    "npu_peak_allocated_bytes": 1436863488,
+    "video": {
+      "frames": 50,
+      "fps": 25.0,
+      "width": 512,
+      "height": 512
+    }
+  },
+  "resume": {
+    "status": "passed",
+    "environment": {
+      "python": "3.11.4",
+      "architecture": "aarch64",
+      "packages": {
+        "torch": "2.7.1+cpu",
+        "torch-npu": "2.7.1.post8",
+        "transformers": "4.57.1",
+        "torchvision": "0.22.1",
+        "numpy": "1.26.4"
+      },
+      "device": "npu:0",
+      "device_name": "Ascend910B3",
+      "cann_version": "9.1.0"
+    },
+    "physics_mode": "upstream",
+    "input_step": 10000,
+    "final_step": 10008,
+    "tolerance": 0.001,
+    "normalized_errors": {
+      "x": 7.944117030866948e-10,
+      "volume": 0.0,
+      "initial_cov": 0.0,
+      "v": 3.88757780456217e-06,
+      "C": 6.677102646790445e-05,
+      "stress": 2.2581325538340025e-05,
+      "F": 3.95404375908015e-09,
+      "F_trial": 8.563240783132642e-09,
+      "Jp": 0.0,
+      "cov": 0.0,
+      "E": 0.0,
+      "nu": 0.0,
+      "density": 0.0,
+      "yield_stress": 0.0,
+      "mu": 0.0,
+      "lam": 0.0,
+      "mass": 0.0
+    },
+    "validation": {
+      "x_absmax": 1.5013917684555054,
+      "v_absmax": 0.04786186292767525,
+      "F_trial_absmax": 1.6844760179519653,
+      "stress_absmax": 193115.8125,
+      "mu_absmax": 161071.328125,
+      "lam_absmax": 3194582.75,
+      "yield_stress_absmax": 0.0,
+      "particle_count": 219416,
+      "particle_mass": 461.35986328125,
+      "grid_mass": 461.3599853515625,
+      "mass_relative_error": 2.645880628449567e-07,
+      "covariance_psd_fp32": true,
+      "covariance_normalized_minor_min": -2.384185791015625e-07,
+      "covariance_normalized_det_min": -6.098707672208548e-08
+    },
+    "render_stats": {
+      "backend": "cann",
+      "input_gaussians_per_scene": 213532,
+      "visible_per_view": [
+        213532
+      ],
+      "tile_intersections_per_view": [
+        252571
+      ],
+      "alpha_threshold": 0.00392156862745098,
+      "alpha_cap": 0.999,
+      "transmittance_threshold": 0.0001,
+      "cpu_work": [
+        "tile-count scheduling metadata"
+      ]
+    },
+    "gaussian_ids_preserved": true
+  },
+  "initial_state_sha256": "c1f99da1e19b5bf8ba1542d58e3f691faf89dbde5ac63137c2cfa464148d6f03",
+  "gpu_warp_alignment": "pending: same-input CUDA/Warp reference pack unavailable",
+  "mpm_backward": "out of scope"
+}
