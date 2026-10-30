@@ -1,6 +1,6 @@
 # M3 监督预训练迁移
 
-训练使用真实 RGB/alpha、材料、E/ν 标签，连接 M1、M2、联合损失和 AdamW；入口为 `train_pretrain.py`。预训练不需要仿真，M1 的 `predict/forward` 仍只执行预测。总览见 [migration_readme.md](../migration_readme.md)，实施约定见 [PRETRAIN_PLAN.md](../PRETRAIN_PLAN.md)。
+训练使用真实 RGB/alpha、材料、E/ν 标签，连接 M1、M2、联合损失和 AdamW；入口为 `train_pretrain.py`。预训练不需要仿真，M1 的 `predict/forward` 仍只执行预测。总览见 [M1-migration_readme.md](../M1-migration_readme.md)，实施约定见 [M3-PRETRAIN_PLAN.md](../M3-PRETRAIN_PLAN.md)。
 
 ## 环境与真实数据
 

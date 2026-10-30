@@ -11,12 +11,13 @@ import statistics
 import time
 
 import numpy as np
-from PIL import Image, ImageDraw
 import torch
 
 from export import to_cpu, write_json
-from rendering import StaticGaussianRenderer
-from rendering.geometry import sh_colors
+from rendering import DynamicGaussianRenderer
+from rendering.cameras import CameraPath
+from rendering.mpm_adapter import MPMFrameAdapter
+from rendering.sequence import FrameExporter, SequenceWriter
 from mpm import MPMSimulator
 from mpm.prepare import prepare_prediction
 from runtime import (
@@ -37,60 +38,22 @@ def atomic_save(value, path):
 
 
 def render_state(sim, renderer, metadata, cache, width, height):
-    n = metadata["gaussian_count"]
-    dev = sim.device
-    dtype = sim.dtype
-    if not cache:
-        for k in (
-            "world_to_sim_rotation",
-            "normalization_center",
-            "feature",
-            "opacity",
-            "camera_c2ws",
-            "camera_intr",
-        ):
-            cache[k] = metadata[k].to(device=dev, dtype=dtype)
-        cache["intr"] = cache["camera_intr"].clone()
-        cache["intr"][..., [0, 2]] *= width / metadata["width"]
-        cache["intr"][..., [1, 3]] *= height / metadata["height"]
-    r = cache["world_to_sim_rotation"]
-    scale = metadata["normalization_scale"]
-    means = ((sim.state["x"][:n] - 1) / scale + cache["normalization_center"]) @ r
-    covariance = r.T @ (sim.covariance()[:n] / scale**2) @ r
-    degree = int(round(cache["feature"].shape[1] ** 0.5) - 1)
-    rotation = r.T @ sim.rotation()[:n] @ r if degree else None
-    colors = sh_colors(
-        cache["feature"],
-        means,
-        cache["camera_c2ws"][0, 0, :3, 3],
-        degree,
-        direction_rotation=rotation,
-    )
-    opacity = cache["opacity"]
-    static = metadata.get("static_gaussians")
-    if static is not None:
-        static = {k: v.to(device=dev, dtype=dtype) for k, v in static.items()}
-        means = torch.cat((means, static["xyz"]))
-        covariance = torch.cat((covariance, static["covariance"]))
-        colors = torch.cat(
-            (
-                colors,
-                sh_colors(
-                    static["feature"],
-                    static["xyz"],
-                    cache["camera_c2ws"][0, 0, :3, 3],
-                    degree,
-                ),
-            )
-        )
-        opacity = torch.cat((opacity, static["opacity"]))
-    return renderer.render_precomputed(
-        means[None],
-        covariance[None],
-        colors[None],
-        opacity[None],
-        cache["camera_c2ws"],
-        cache["intr"],
+    """M4 compatibility wrapper: same first input camera, shared M5 logic."""
+    key = (width, height)
+    if cache.get("_size") != key:
+        cache.clear()
+        cache["_size"] = key
+        cache["adapter"] = MPMFrameAdapter(metadata, sim.device, sim.dtype)
+        cache["dynamic"] = DynamicGaussianRenderer(renderer=renderer)
+        cache["camera"] = CameraPath(
+            {}, metadata, mode="input", width=width, height=height
+        ).at(0)
+    frame = cache["adapter"].frame(sim, sim.steps)
+    camera = cache["camera"]
+    return cache["dynamic"](
+        cache["adapter"].render_input(frame),
+        camera["c2ws"].to(sim.device),
+        camera["intr"].to(sim.device),
         width=width,
         height=height,
     )
@@ -146,7 +109,7 @@ def validate_state(sim):
     return result
 
 
-def main():
+def main(argv=None):
     p = argparse.ArgumentParser(description=__doc__)
     source = p.add_mutually_exclusive_group()
     source.add_argument("--prediction-pack", type=Path, default=None)
@@ -172,7 +135,25 @@ def main():
     p.add_argument("--profile-steps", type=int, default=5)
     p.add_argument("--threads", type=int, default=8)
     p.add_argument("--no-render", action="store_true")
-    args = p.parse_args()
+    p.add_argument("--camera-mode", choices=("input", "config"), default="input")
+    p.add_argument(
+        "--camera-config",
+        type=Path,
+        help="Override rendering camera configuration only",
+    )
+    p.add_argument("--cameras-json", type=Path)
+    p.add_argument("--move-camera", action=argparse.BooleanOptionalAction, default=None)
+    p.add_argument("--save-render-frames", action="store_true")
+    p.add_argument("--sequence-dir", type=Path)
+    p.add_argument("--append-sequence", action="store_true")
+    p.add_argument(
+        "--save-render-tensors",
+        action="store_true",
+        help="CPU FP32 RGB/alpha for replay verification",
+    )
+    p.add_argument("--fps", type=float, help="Playback override; default 1/frame_dt")
+    p.add_argument("--background", nargs=3, type=float, default=(1.0, 1.0, 1.0))
+    args = p.parse_args(argv)
     torch.set_num_threads(args.threads)
     out = args.output_dir
     out.mkdir(parents=True, exist_ok=True)
@@ -233,8 +214,31 @@ def main():
     frames = args.frames if args.frames is not None else cfg.get("frame_num", 100)
     if frames <= 0 or (args.steps is not None and args.steps <= 0):
         raise ValueError("Positive frame/step count required")
-    width = args.width or meta["width"]
-    height = args.height or meta["height"]
+    width = (
+        args.width
+        if args.width is not None
+        else (meta["width"] if args.camera_mode == "input" else 512)
+    )
+    height = (
+        args.height
+        if args.height is not None
+        else (meta["height"] if args.camera_mode == "input" else 512)
+    )
+    camera_cfg = dict(cfg)
+    if args.camera_config is not None:
+        camera_cfg.update(json.loads(args.camera_config.read_text()))
+    if args.move_camera is not None:
+        camera_cfg["move_camera"] = args.move_camera
+    if args.cameras_json is not None:
+        camera_cfg["_external_cameras"] = json.loads(args.cameras_json.read_text())
+    camera_path = CameraPath(
+        camera_cfg, meta, mode=args.camera_mode, width=width, height=height
+    )
+    # Frame 0 is rendered after the first frame_dt, matching gs_simulation.py.
+    # Explicit absolute indices preserve camera phase on resumed simulations.
+    start_frame = sim.steps // substeps
+    camera_path.at(start_frame)
+    fps = args.fps if args.fps is not None else 1 / frame_dt
     report = dict(
         environment=environment_report(device),
         physics_mode=args.physics_mode,
@@ -258,28 +262,47 @@ def main():
         solver_host_particle_fallback=False,
         frames=[],
         start_step=sim.steps,
+        status="running",
+        camera_mode=args.camera_mode,
+        start_frame=start_frame,
+        fps=fps,
+        width=width,
+        height=height,
+        background=list(args.background),
+        camera_config=camera_cfg,
+        new_cann_operator_families=0,
     )
-    renderer = StaticGaussianRenderer(
+    renderer = DynamicGaussianRenderer(
         backend="cann" if device.type == "npu" else "reference", far_plane=2.5
     )
-    cache = {}
-    writer = None
-    previews = []
+    adapter = MPMFrameAdapter(meta, device, sim.dtype)
+    sequence = None
+    if args.save_render_frames:
+        sequence = SequenceWriter(
+            args.sequence_dir or out / "sequence",
+            adapter.shared,
+            {**camera_cfg, "frame_dt": frame_dt},
+            args.physics_mode,
+            append=args.append_sequence,
+        )
+        report["sequence_dir"] = str(sequence.root)
+    exporter = None
     elapsed_render = 0.0
     elapsed_export = 0.0
+    camera_records = []
 
     if not args.no_render and args.steps is None:
-        import cv2
-
-        writer = cv2.VideoWriter(
-            str(out / "simulation.mp4"),
-            cv2.VideoWriter_fourcc(*"mp4v"),
-            25.0,
-            (width, height),
+        exporter = FrameExporter(
+            out,
+            width,
+            height,
+            fps,
+            total_frames=frames,
+            physics_mode=args.physics_mode,
+            save_tensors=args.save_render_tensors,
+            background=args.background,
+            legacy_frames=args.camera_mode == "input" and not args.save_render_frames,
         )
-        if not writer.isOpened():
-            raise RuntimeError("OpenCV MP4 encoder unavailable")
-        (out / "frames").mkdir(exist_ok=True)
     synchronize(device)
     run_start = time.perf_counter()
     try:
@@ -304,36 +327,36 @@ def main():
                     steps=sim.steps,
                     solver_seconds=solver_seconds,
                     **checked,
+                    frame_index=start_frame + frame,
                 )
-                if writer is not None:
+                render_frame = None
+                camera = None
+                if exporter is not None or sequence is not None:
+                    et = time.perf_counter()
+                    render_frame = adapter.frame(sim, start_frame + frame)
+                    camera = camera_path.at(start_frame + frame)
+                    camera_records.append(to_cpu(camera))
+                    synchronize(device)
+                    record["frame_prepare_seconds"] = time.perf_counter() - et
+                if sequence is not None:
+                    et = time.perf_counter()
+                    sequence.append(render_frame, camera)
+                    record["sequence_export_seconds"] = time.perf_counter() - et
+                if exporter is not None:
                     rt = time.perf_counter()
-                    image = render_state(sim, renderer, meta, cache, width, height)
+                    image = renderer(
+                        adapter.render_input(render_frame),
+                        camera["c2ws"].to(device),
+                        camera["intr"].to(device),
+                        width=width,
+                        height=height,
+                        background=args.background,
+                    )
                     synchronize(device)
                     record["render_seconds"] = time.perf_counter() - rt
                     elapsed_render += record["render_seconds"]
                     et = time.perf_counter()
-                    rgb = (
-                        (
-                            image.rgb[0, 0].cpu().permute(1, 2, 0).clamp(0, 1).numpy()
-                            * 255
-                        )
-                        .round()
-                        .astype(np.uint8)
-                    )
-                    png = Image.fromarray(rgb)
-                    draw = ImageDraw.Draw(png)
-                    draw.rectangle((0, 0, 260, 22), fill="white")
-                    draw.text(
-                        (5, 5),
-                        f"{args.physics_mode} | frame {frame + 1:02d} | t={sim.time:.2f}s",
-                        fill="black",
-                    )
-                    png.save(out / "frames" / f"{frame + 1:04d}.png")
-                    writer.write(np.asarray(png)[:, :, ::-1])
-                    if frame in sorted(
-                        set([0, frames // 4, frames // 2, 3 * frames // 4, frames - 1])
-                    ):
-                        previews.append(png.copy())
+                    exporter.write(image, start_frame + frame, sim.time)
                     record["export_seconds"] = time.perf_counter() - et
                     elapsed_export += record["export_seconds"]
                 report["frames"].append(record)
@@ -353,15 +376,17 @@ def main():
         report["render_seconds"] = elapsed_render
         report["image_export_seconds"] = elapsed_export
         atomic_save(sim.export_state(cpu=True), out / "final_state.pt")
-        if previews:
-            montage = Image.new("RGB", (width * len(previews), height), "white")
-            for i, img in enumerate(previews):
-                montage.paste(img, (i * width, 0))
-            montage.save(out / "preview.png")
+        if camera_records:
+            atomic_save(camera_records, out / "cameras.pt")
+        report["status"] = "passed"
         write_json(out / "report.json", report)
+    except Exception as exc:
+        report.update(status="failed", error=f"{type(exc).__name__}: {exc}")
+        write_json(out / "report.json", report)
+        raise
     finally:
-        if writer is not None:
-            writer.release()
+        if exporter is not None:
+            exporter.close()
 
 
 if __name__ == "__main__":

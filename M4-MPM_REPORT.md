@@ -1,6 +1,6 @@
 # M4 MPM 前向仿真迁移验收报告
 
-本阶段已完成：真实 M1 预测 → CPU 原算法初始化/填充 → NPU MPM 前向仿真 → 动态 Gaussian 渲染 → 状态保存恢复。原仓基线为 `7722175ba55db54fd430a7d29a4407b8f8ffe6b6`；原仓未改动。实现计划见 [MPM_PLAN.md](MPM_PLAN.md)。
+本阶段已完成：真实 M1 预测 → CPU 原算法初始化/填充 → NPU MPM 前向仿真 → 动态 Gaussian 渲染 → 状态保存恢复。原仓基线为 `7722175ba55db54fd430a7d29a4407b8f8ffe6b6`；原仓未改动。实现计划见 [M4-MPM_PLAN.md](M4-MPM_PLAN.md)。
 
 ## 环境与实现
 
@@ -70,6 +70,6 @@ CPU 使用独立标量 NumPy FP64 公式参考，重新分解返回映射后的 
 - `results/mpm_cake/initial_state.pt`、`latest_state.pt`、`final_state.pt`：完整CPU Tensor状态包。
 - `results/mpm_resume/`：真实末状态的保存恢复与后续渲染检查。
 
-构建和启动命令见 [migration_readme.md](migration_readme.md#m4-mpm-前向仿真迁移)。全流程复验为 `bash scripts/verify_mpm.sh`；需要现有M1 cake预测包及M2渲染构建产物。
+构建和启动命令见 [M1-migration_readme.md](M1-migration_readme.md#m4-mpm-前向仿真迁移)。全流程复验为 `bash scripts/verify_mpm.sh`；需要现有M1 cake预测包及M2渲染构建产物。
 
 本阶段不包含MPM反向传播。原CUDA/Warp同输入数值对齐尚缺参考包；本报告中的CPU公式检查不冒充GPU数值对齐。

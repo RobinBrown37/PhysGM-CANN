@@ -51,7 +51,7 @@ CPU 执行的工作已明确记录：图像/相机预处理、权重读取和导
 
 ## 复现与产物
 
-使用命令见 [迁移说明](migration_readme.md)，一键验收为 `bash scripts/verify_npu.sh`，运行前加载 CANN 环境。
+使用命令见 [迁移说明](M1-migration_readme.md)，一键验收为 `bash scripts/verify_npu.sh`，运行前加载 CANN 环境。
 
 - [CPU 烟测报告](reports/cpu_smoke.json)
 - [NPU 512 推理报告](reports/npu_forward.json)

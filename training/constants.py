@@ -1,7 +1,7 @@
 """Original PhysGM training label conventions (export E conversion is separate)."""
 import math
 
-MATERIALS = ("Wood", "Metal", "Plastic", "Glass", "Fabric", "Leather", "Ceramic", "Stone",
+box_packageMATERIALS = ("Wood", "Metal", "Plastic", "Glass", "Fabric", "Leather", "Ceramic", "Stone",
              "Rubber", "Paper", "Sand", "Snow", "Plasticine", "Foam")
 E_MEAN, E_STD = 7.387210, 2.456477
 NU_MEAN, NU_STD = 0.398, 0.111

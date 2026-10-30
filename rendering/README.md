@@ -1,6 +1,6 @@
 # M2 静态高斯渲染迁移：接口与反向传播
 
-项目总览见 [迁移说明](../migration_readme.md)。
+项目总览见 [迁移说明](../M1-migration_readme.md)。
 
 接口提供 RGB/alpha 和一阶反向传播。投影、协方差、SH 和原始参数激活均在 TorchNPU 上执行；分块筛选、排序和合成使用项目内构建的 CANN 算子。原有 M1 `predict/forward` 行为保持不变。
 
@@ -84,4 +84,12 @@ Renderer 输出保持 float RGB 原值，允许颜色大于 1；仅 PNG 预览 c
 
 渲染侧 CPU 工作包括数据/相机预处理、输出文件以及 tile 数量调度元数据；在线 M1 还保留原有固定位置编码的 CPU 常量预计算。Gaussian 投影、排序、颜色和合成前反向均由 NPU Tensor/算子执行。当前透射率终止由 CANN 按四 Gaussian 分组/整 tile 决策；CPU 小规模参考不启用提前终止。图像精度和梯度按固定测试容差验收，同批 GPU gsplat 对齐与 910C 实机测试仍需独立完成。
 
-实施计划见 [STATIC_RENDER_PLAN.md](../STATIC_RENDER_PLAN.md)，本次实际结果见 [STATIC_RENDER_REPORT.md](../STATIC_RENDER_REPORT.md)。
+实施计划见 [M2-STATIC_RENDER_PLAN.md](../M2-STATIC_RENDER_PLAN.md)，本次实际结果见 [M2-STATIC_RENDER_REPORT.md](../M2-STATIC_RENDER_REPORT.md)。
+
+## M5 动态前向与序列回放
+
+`DynamicGaussianRenderer` 复用同一静态 renderer，只把输入换成逐帧世界坐标 `xyz [B,N,3]`、完整 `covariance [B,N,3,3]`、SH `feature [B,N,C,3]`、概率 `opacity [B,N,1]` 与可选 `rotation [B,N,3,3]`。它支持多目标视图，并为每个相机单独求 SH 颜色后调用 `render_precomputed()`；返回仍为 `RenderResult`。
+
+`rendering.mpm_adapter.MPMFrameAdapter` 负责从 MPM 状态恢复世界位置和 `FΣFᵀ`，只取原 Gaussian，排除填充粒子，并按 Gaussian ID 拼接配置区域外的静态部分。`rendering.sequence` 将共享外观与逐帧几何分开保存；所有帧为 CPU FP32、原子写入、逐文件校验，`SequenceReader` 只按需载入一帧。
+
+`render_dynamic.py` 是独立回放入口，不加载网络权重、不运行 MPM 子步。默认复现缓存内记录相机；`--camera-mode config` 重新生成球面配置相机，`--camera-mode input` 使用 M1 输入相机，`--cameras-json` 可替换为外部相机。完整计划和验收结果分别见 [M5-DYNAMIC_RENDER_PLAN.md](../M5-DYNAMIC_RENDER_PLAN.md) 与 [M5-DYNAMIC_RENDER_REPORT.md](../M5-DYNAMIC_RENDER_REPORT.md)。

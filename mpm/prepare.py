@@ -224,6 +224,7 @@ def prepare_prediction(pack, config, seed=2026):
             covariance=torch.from_numpy(world_cov),
             opacity=torch.from_numpy(opacity[~selected, None]),
             feature=g["feature"][~selected],
+            gaussian_ids=ids[~selected],
         )
         pos = pos[selected]
         cov = cov[selected]
@@ -262,6 +263,8 @@ def prepare_prediction(pack, config, seed=2026):
         static_gaussians=static,
         camera_c2ws=pack["input"]["input_c2ws"][:, :1].cpu(),
         camera_intr=pack["input"]["input_intr"][:, :1].cpu(),
+        input_c2ws=pack["input"]["input_c2ws"].cpu(),
+        input_intr=pack["input"]["input_intr"].cpu(),
         width=int(pack["input"]["input_images"].shape[-1]),
         height=int(pack["input"]["input_images"].shape[-2]),
         filling=filling,

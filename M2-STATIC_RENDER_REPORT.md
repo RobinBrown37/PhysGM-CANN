@@ -64,7 +64,7 @@
 ## 产物与复现
 
 - [构建、API 和预训练接入说明](rendering/README.md)
-- [完整实施计划](STATIC_RENDER_PLAN.md)
+- [完整实施计划](M2-STATIC_RENDER_PLAN.md)
 - [NPU 512 四视图报告](reports/static_512.json)
 - [百万点 512 属性反向报告](reports/static_512_backward.json)
 - [在线网络图像反向与算子报告](reports/static_network_backward.json)

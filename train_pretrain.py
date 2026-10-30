@@ -237,11 +237,17 @@ def main(argv=None):
         checkpoint = None
         initial_dino = dino_digest(network)
         if distributed.rank == 0:
+            source_manifest_path = Path(config.data.data_path)
+            if not source_manifest_path.is_absolute():
+                source_manifest_path = ROOT / source_manifest_path
+            source_manifest_path = source_manifest_path.parent / "manifest.json"
+            if not source_manifest_path.exists():
+                source_manifest_path = ROOT / "datasets/physassets_subset/manifest.json"
             (directory/"config.yaml").write_text(yaml.safe_dump(plain_config(config), sort_keys=False))
             write_json(directory/"data_manifest.json", {"train": [str(p) for p in train_data.paths],
                 "validation": [str(p) for p in validation.paths], "fingerprints": signature["value"]["datasets"],
-                "source_manifest": json.loads((ROOT/"datasets/physassets_subset/manifest.json").read_text())
-                if (ROOT/"datasets/physassets_subset/manifest.json").exists() else None})
+                "source_manifest": json.loads(source_manifest_path.read_text())
+                if source_manifest_path.exists() else None})
             if config.training.get("tensorboard", True):
                 from torch.utils.tensorboard import SummaryWriter
                 writer = SummaryWriter(directory/"tensorboard")

@@ -10,5 +10,6 @@ if _vendor.is_dir():
         os.environ["ASCEND_CUSTOM_OPP_PATH"] = ":".join([str(_vendor), *[p for p in _paths if p]])
 
 from .static import StaticGaussianRenderer, RenderResult
+from .dynamic import DynamicGaussianRenderer
 
-__all__ = ["StaticGaussianRenderer", "RenderResult"]
+__all__ = ["StaticGaussianRenderer", "DynamicGaussianRenderer", "RenderResult"]

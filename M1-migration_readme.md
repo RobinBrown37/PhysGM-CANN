@@ -8,6 +8,7 @@
 | [M2 静态高斯渲染迁移](#m2-静态高斯渲染迁移) | Gaussian 与目标相机 → RGB/alpha，图像梯度回传网络 | 真实渲染、属性反向与网络连接验证通过 |
 | [M3 监督预训练迁移](#m3-监督预训练迁移) | 真实图像与物理标签 → 联合损失 → 有效更新、验证与完整恢复 | 100步短训、完整恢复与53项回归通过 |
 | [M4 MPM 前向仿真迁移](#m4-mpm-前向仿真迁移) | 六种材料、边界条件、粒子/网格传输 → 动态 Gaussian 渲染 | 数值、性能与完整 cake 结果见 M4 验收报告 |
+| [M5 动态高斯渲染前向迁移](#m5-动态高斯渲染前向迁移) | MPM 帧 → 可缓存、可换相机的动态渲染与视频 | 完整50帧、独立换相机回放及总回归通过 |
 
 ![cake 静态高斯渲染预览](results/render_preview.png)
 
@@ -31,7 +32,7 @@ uv 管理 Python 包，驱动与 CANN 由机器提供。默认启动开发测试
 
 ## M1 神经网络迁移
 
-覆盖完整 DINOv3、相机/Plücker 射线编码、24 层 Transformer、DPT Gaussian 头、三个物理属性头及后处理。纯网络导入与执行不依赖渲染扩展，Attention 使用 PyTorch SDPA，由 TorchNPU 分派 NPU 实现。实际验证记录见 [M1 迁移验证报告](MIGRATION_REPORT.md)。
+覆盖完整 DINOv3、相机/Plücker 射线编码、24 层 Transformer、DPT Gaussian 头、三个物理属性头及后处理。纯网络导入与执行不依赖渲染扩展，Attention 使用 PyTorch SDPA，由 TorchNPU 分派 NPU 实现。实际验证记录见 [M1 迁移验证报告](M1-MIGRATION_REPORT.md)。
 
 ### 推理与输出
 
@@ -115,7 +116,7 @@ CPU 工作包括图像读取/缩放、相机规范化、权重读取、输出文
 
 独立 `StaticGaussianRenderer` 接收 M1 的原始 Gaussian 和固定目标相机，输出 RGB/alpha/RGBA，并保留图像到 Gaussian、再到网络的一阶计算图。投影、协方差、SH 与参数激活由 TorchNPU 执行；分块、排序及合成前反向使用项目内构建的 CANN 原生算子。
 
-实施过程与完整结果见 [M2 实施计划](STATIC_RENDER_PLAN.md)、[M2 验收报告](STATIC_RENDER_REPORT.md)；详细参数和接口约定见 [渲染接口说明](rendering/README.md)。
+实施过程与完整结果见 [M2 实施计划](M2-STATIC_RENDER_PLAN.md)、[M2 验收报告](M2-STATIC_RENDER_REPORT.md)；详细参数和接口约定见 [渲染接口说明](rendering/README.md)。
 
 ### 构建与渲染
 
@@ -221,7 +222,7 @@ uv run --locked --group train python train_pretrain.py \
 
 损失为白背景RGB MSE、alpha MSE、one-hot材料BCE以及E/ν的Gaussian NLL+MSE，保留原训练标签单位。可选VGG LPIPS默认关闭，显式准备官方权重后离线运行。默认确定性运算，训练状态在完整累积窗口后原子保存。
 
-完整命令、数据接口、从头初始化、多卡和恢复约定见 [M3训练说明](training/README.md)；[实施计划](PRETRAIN_PLAN.md)与[验收报告](PRETRAIN_REPORT.md)记录实际测试、步数与限制。全矩阵复验命令为 `bash scripts/verify_pretrain.sh`。
+完整命令、数据接口、从头初始化、多卡和恢复约定见 [M3训练说明](training/README.md)；[实施计划](M3-PRETRAIN_PLAN.md)与[验收报告](M3-PRETRAIN_REPORT.md)记录实际测试、步数与限制。全矩阵复验命令为 `bash scripts/verify_pretrain.sh`。
 
 本次正式短训产物位于 `results/pretrain_final/`，可恢复断点为 `last.pt`；[第100步真实目标/预测对照](results/pretrain_final/vis_000100/comparison.png)与[完整验收摘要](reports/pretrain_verification.json)可直接查看。连续训练与中断恢复后的全部梯度、参数更新逐元素一致。真实双NPU及同批GPU数值对齐仍待独立验收。
 
@@ -262,6 +263,54 @@ uv sync --locked --group mpm --group render-build --group train
 
 输出包括 `initial_state.pt`、`latest_state.pt`、`final_state.pt`、`frames/`、`simulation.mp4`、`preview.png`、逐帧诊断和环境/性能报告。状态包含粒子ID、材料内部变量、选择掩码、边界状态与时间。动态渲染接收完整协方差/RGB/opacity，不重新分解尺度/四元数，不渲染内部填充粒子。
 
-复验命令：`bash scripts/verify_mpm.sh`。实施依据见 [M4计划](MPM_PLAN.md)，实际结果见 [M4验收报告](MPM_REPORT.md) 和 [结构化验收摘要](reports/mpm_verification.json)。原 CUDA/Warp 同输入对齐等待参考包单独验收。
+复验命令：`bash scripts/verify_mpm.sh`。实施依据见 [M4计划](M4-MPM_PLAN.md)，实际结果见 [M4验收报告](M4-MPM_REPORT.md) 和 [结构化验收摘要](reports/mpm_verification.json)。原 CUDA/Warp 同输入对齐等待参考包单独验收。
 
 已完成完整50帧/10000子步，约381秒，峰值分配1.34 GiB；41项MPM与原有53项回归通过。查看 [动态视频](results/mpm_cake/simulation.mp4)、[原相机预览](results/mpm_cake/preview.png) 和 [扩大视野的初末对照](results/mpm_cake/overview.png)。后者保留相机姿态、显式将焦距乘0.65，主要视频仍使用原始M1内参。
+
+## M5 动态高斯渲染前向迁移
+
+M5 将 M4 的逐帧预览整理为独立 `DynamicGaussianRenderer`：输入世界坐标位置、完整协方差、SH、已激活 opacity 和可选着色旋转，逐目标视图调用 M2 的 `render_precomputed()`。不会重新分解协方差、重复执行 exp/sigmoid，SH0 跳过旋转计算；M5 没有新增 CANN 算子。
+
+```bash
+source /home/developer/Ascend/cann-9.1.0/set_env.sh
+
+# 严格 M1 推理 → 完整 MPM → 配置相机渲染，并保存可回放序列
+.venv/bin/python pipeline.py \
+  --output-dir results/dynamic_cake --save-render-tensors
+
+# 使用在线记录的同一相机独立回放，并逐帧比较编码前 FP32 RGB/alpha
+.venv/bin/python render_dynamic.py \
+  --sequence results/dynamic_cake/sequence \
+  --output-dir results/dynamic_cake/replay_fixed \
+  --compare-to results/dynamic_cake/render_tensors --profile
+
+# 不重新仿真，改为原配置的运动轨迹；绝对帧号保证恢复后相位连续
+.venv/bin/python render_dynamic.py \
+  --sequence results/dynamic_cake/sequence \
+  --output-dir results/dynamic_cake/replay_orbit \
+  --camera-mode config --move-camera
+```
+
+`simulate_mpm.py` 默认仍使用 M4 的首个输入相机；显式传 `--camera-mode config --save-render-frames` 才启用 M5 配置相机和缓存。外部相机使用 `--cameras-json`，保留可选 `cx/cy`；缺省主点取图像中心。缓存将共享外观/ID与每帧 CPU FP32 位置、3×3 协方差分开保存，并带共享及逐帧 SHA256；回放按帧懒加载，不导入网络或 MPM 求解器。
+
+默认视频 FPS 为 `1/frame_dt`。RGB/alpha PNG 保持请求尺寸；只有 MP4 编码尺寸在宽高为奇数时向右/下补边，编码前浮点图像用于数值验收。完整接口、相机和缓存约定见 [渲染说明](rendering/README.md)，实施计划见 [M5 计划](M5-DYNAMIC_RENDER_PLAN.md)，实际结果见 [M5 验收报告](M5-DYNAMIC_RENDER_REPORT.md)。一键全矩阵复验为 `bash scripts/verify_dynamic.sh`。
+
+本机完整验收严格加载645个模型条目，使用四张512输入、213532个原Gaussian和5884个填充粒子，完成50帧/10000子步。序列约517.7 MB；同相机离线回放的编码前RGB/alpha最大绝对差为0，换相机回放不加载网络且不执行MPM。查看 [在线预览](results/dynamic_cake/preview.png)、[在线视频](results/dynamic_cake/simulation.mp4) 和 [运动相机视频](results/dynamic_cake/replay_orbit/simulation.mp4)。
+
+## 完整数据集抽样 NPU 基准
+
+GPU/NPU 对比使用固定的 512 场景分层子集：每场景4个输入视图和4个 held-out 视图，448训练/64验证。准备脚本直接流式读取七个分片并校验完整归档 SHA256，不创建合并包：
+
+```bash
+python scripts/prepare_physassets_benchmark.py \
+  --archive-dir /home/developer/datasets/physassets \
+  --output-dir /home/developer/datasets/physassets_benchmark_512
+
+python benchmark_inference.py \
+  --data-list /home/developer/datasets/physassets_benchmark_512/all.txt \
+  --manifest /home/developer/datasets/physassets_benchmark_512/manifest.json \
+  --checkpoint checkpoint.pt --device npu:0 --amp-dtype bf16 \
+  --output-dir results/npu_benchmark_20261030/m1_m2_dataset_512
+```
+
+本机完成512场景M1/M2、100步256²训练、一次512²累积8更新、完整cake M4/M5和121项最终回归。机器可读结果见 [NPU 汇总](results/npu_benchmark_20261030/summary.json)，测试方法与计时边界见 [NPU 基准报告](NPU-BENCHMARK-REPORT.md)，GPU机器的同路径迁移清单、环境和M1–M5接力步骤见 [GPU 基准接力说明](GPU-BENCHMARK-HANDOFF.md)。
