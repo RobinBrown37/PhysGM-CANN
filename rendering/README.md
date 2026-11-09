@@ -1,15 +1,14 @@
 # M2 静态高斯渲染迁移：接口与反向传播
 
-项目总览见 [迁移说明](../M1-migration_readme.md)。
+项目总览见 [README](../README.md)，模块差异见 [迁移说明](../docs/migration.md)。
 
 接口提供 RGB/alpha 和一阶反向传播。投影、协方差、SH 和原始参数激活均在 TorchNPU 上执行；分块筛选、排序和合成使用项目内构建的 CANN 算子。原有 M1 `predict/forward` 行为保持不变。
 
 ## 构建与运行
 
 ```bash
-cd /mnt/workspace/PhysGM-CANN
-export PATH="/mnt/workspace/.tools/bin:$PATH"
-source /home/developer/Ascend/cann-9.1.0/set_env.sh
+cd /path/to/PhysGM-CANN
+source /path/to/Ascend/cann-9.1.0/set_env.sh
 uv sync --locked --group render-build
 uv run --locked --group render-build python scripts/build_renderer.py --jobs 8
 
@@ -74,7 +73,7 @@ Renderer 输出保持 float RGB 原值，允许颜色大于 1；仅 PNG 预览 c
 - 物理头没有图像梯度符合架构；后续材料/E/ν 标签损失应独立连接物理头，不能据此误判渲染反向失败。
 - CANN 原生合成仅支持一阶梯度；当前预训练的一阶反向可用，高阶梯度未提供。
 
-本轮的 `--backward-probe` 只传入固定 RGB/alpha 上游梯度，没有损失函数模块、训练循环、优化器或参数更新。后续需另行实现真实监督数据、联合损失、优化器/AMP、短训和保存恢复。
+`--backward-probe` 只传入固定 RGB/alpha 上游梯度，没有真实监督或参数更新。M3 已在 `train_pretrain.py` 中连接真实监督、联合损失、优化器与恢复，详见 [训练说明](../training/README.md)。
 
 ## 重放包和验收产物
 
@@ -82,9 +81,9 @@ Renderer 输出保持 float RGB 原值，允许颜色大于 1；仅 PNG 预览 c
 
 `renderer_output.pt` 保存 float RGB/alpha；反向模式还保存五组输入属性梯度。每个 batch/view 的 RGB 与 alpha PNG、统计、同步时间与峰值内存保存在同目录。CPU reference 必须显式选择 `--backend reference --device cpu`，具有规模保护，不自动回退。
 
-渲染侧 CPU 工作包括数据/相机预处理、输出文件以及 tile 数量调度元数据；在线 M1 还保留原有固定位置编码的 CPU 常量预计算。Gaussian 投影、排序、颜色和合成前反向均由 NPU Tensor/算子执行。当前透射率终止由 CANN 按四 Gaussian 分组/整 tile 决策；CPU 小规模参考不启用提前终止。图像精度和梯度按固定测试容差验收，同批 GPU gsplat 对齐与 910C 实机测试仍需独立完成。
+渲染侧 CPU 工作包括数据/相机预处理、输出文件以及 tile 数量调度元数据；在线 M1 还保留原有固定位置编码的 CPU 常量预计算。Gaussian 投影、排序、颜色和合成前反向均由 NPU Tensor/算子执行。当前透射率终止由 CANN 按四 Gaussian 分组/整 tile 决策；CPU 小规模参考不启用提前终止。图像精度和梯度按固定测试容差验收；GPU gsplat 跨设备严格 allclose 未通过，GT 对照见 [测试结果](../docs/benchmark.md)。910C 实机尚未测试。
 
-实施计划见 [M2-STATIC_RENDER_PLAN.md](../M2-STATIC_RENDER_PLAN.md)，本次实际结果见 [M2-STATIC_RENDER_REPORT.md](../M2-STATIC_RENDER_REPORT.md)。
+M2 构建改动和与原仓的差异见 [迁移说明](../docs/migration.md)，实测见 [测试结果](../docs/benchmark.md)。
 
 ## M5 动态前向与序列回放
 
@@ -92,4 +91,4 @@ Renderer 输出保持 float RGB 原值，允许颜色大于 1；仅 PNG 预览 c
 
 `rendering.mpm_adapter.MPMFrameAdapter` 负责从 MPM 状态恢复世界位置和 `FΣFᵀ`，只取原 Gaussian，排除填充粒子，并按 Gaussian ID 拼接配置区域外的静态部分。`rendering.sequence` 将共享外观与逐帧几何分开保存；所有帧为 CPU FP32、原子写入、逐文件校验，`SequenceReader` 只按需载入一帧。
 
-`render_dynamic.py` 是独立回放入口，不加载网络权重、不运行 MPM 子步。默认复现缓存内记录相机；`--camera-mode config` 重新生成球面配置相机，`--camera-mode input` 使用 M1 输入相机，`--cameras-json` 可替换为外部相机。完整计划和验收结果分别见 [M5-DYNAMIC_RENDER_PLAN.md](../M5-DYNAMIC_RENDER_PLAN.md) 与 [M5-DYNAMIC_RENDER_REPORT.md](../M5-DYNAMIC_RENDER_REPORT.md)。
+`render_dynamic.py` 是独立回放入口，不加载网络权重、不运行 MPM 子步。默认复现缓存内记录相机；`--camera-mode config` 重新生成球面配置相机，`--camera-mode input` 使用 M1 输入相机，`--cameras-json` 可替换为外部相机。M5 的实现范围见 [迁移说明](../docs/migration.md)，结果见 [测试结果](../docs/benchmark.md)。

@@ -1,13 +1,12 @@
 # M3 监督预训练迁移
 
-训练使用真实 RGB/alpha、材料、E/ν 标签，连接 M1、M2、联合损失和 AdamW；入口为 `train_pretrain.py`。预训练不需要仿真，M1 的 `predict/forward` 仍只执行预测。总览见 [M1-migration_readme.md](../M1-migration_readme.md)，实施约定见 [M3-PRETRAIN_PLAN.md](../M3-PRETRAIN_PLAN.md)。
+训练使用真实 RGB/alpha、材料、E/ν 标签，连接 M1、M2、联合损失和 AdamW；兼容原仓的入口为 `main.py`，实现位于 `train_pretrain.py`。预训练不需要仿真，M1 的 `predict/forward` 仍只执行预测。总览见 [README](../README.md)，迁移差异见 [迁移说明](../docs/migration.md)，结果见 [测试结果](../docs/benchmark.md)。
 
 ## 环境与真实数据
 
 ```bash
-cd /mnt/workspace/PhysGM-CANN
-export PATH="/mnt/workspace/.tools/bin:$PATH"
-source /home/developer/Ascend/cann-9.1.0/set_env.sh
+cd /path/to/PhysGM-CANN
+source /path/to/Ascend/cann-9.1.0/set_env.sh
 uv sync --locked --group train --group render-build
 uv run --locked --group render-build python scripts/build_renderer.py --jobs 8
 uv run --locked --group train python scripts/prepare_physassets.py
@@ -115,4 +114,4 @@ bash scripts/verify_pretrain_resume.sh results/my_resume_check
 bash scripts/verify_pretrain.sh
 ```
 
-完整矩阵保存多个全网络 AdamW checkpoint，需要为每份约 4.9 GiB 的状态预留空间。默认使用新时间戳目录，避免覆盖已有实验。当前一张 910B3 已验收单 rank HCCL；真实双卡和同批 GPU 参考对齐需另行验收。
+完整矩阵保存多个全网络 AdamW checkpoint，需要为每份约 4.9 GiB 的状态预留空间。默认使用新时间戳目录，避免覆盖已有实验。当前一张 910B3 已验收单 rank HCCL；真实双卡仍需验收。GPU/NPU 已完成相同步数和 GT 验证比较，但未达到跨设备训练参数逐元素对齐，详见 [测试结果](../docs/benchmark.md)。

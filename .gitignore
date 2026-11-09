@@ -7,25 +7,16 @@ __pycache__/
 *.pt
 *.pth
 *.safetensors
-/results/*
+# Keep only two lightweight previews in the source repository.
+/results/**
+!/results/
 !/results/render_preview.png
-!/results/mpm_cake/
-/results/mpm_cake/*
-!/results/mpm_cake/preview.png
-!/results/mpm_cake/overview.png
-!/results/mpm_cake/simulation.mp4
 !/results/dynamic_cake/
-/results/dynamic_cake/*
+/results/dynamic_cake/**
 !/results/dynamic_cake/preview.png
-!/results/dynamic_cake/simulation.mp4
-!/results/dynamic_cake/replay_fixed/
-/results/dynamic_cake/replay_fixed/*
-!/results/dynamic_cake/replay_fixed/preview.png
-!/results/dynamic_cake/replay_fixed/simulation.mp4
-!/results/dynamic_cake/replay_orbit/
-/results/dynamic_cake/replay_orbit/*
-!/results/dynamic_cake/replay_orbit/preview.png
-!/results/dynamic_cake/replay_orbit/simulation.mp4
+# Generated machine reports and local migration history remain on disk.
+/reports/
+/.local_history/
 outputs/
 export_only_prof_dir/
 build/

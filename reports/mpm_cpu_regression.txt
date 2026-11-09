@@ -1,8 +1,0 @@
-................s..........ssssss...............sssss                    [100%]
-=============================== warnings summary ===============================
-tests/test_pretrain.py::test_nonfinite_window_never_updates_or_advances_schedule[False]
-  /mnt/workspace/PhysGM-CANN/.venv/lib/python3.11/site-packages/torch_npu/utils/storage.py:103: UserWarning: TypedStorage is deprecated. It will be removed in the future and UntypedStorage will be the only storage class. This should only matter to you if you are using storages directly.  To access UntypedStorage directly, use tensor.untyped_storage() instead of tensor.storage()
-    if self.device.type != 'cpu':
-
--- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
-41 passed, 12 skipped, 1 warning in 25.69s

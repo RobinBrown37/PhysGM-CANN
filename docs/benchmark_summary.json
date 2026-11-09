@@ -1,0 +1,45 @@
+{
+  "format": "physgm-gt-gpu-npu-public-summary-v1",
+  "experiment_date": "2026-11-04",
+  "baseline_commit": "7722175ba55db54fd430a7d29a4407b8f8ffe6b6",
+  "checkpoint_sha256": "b4cdf3418d95f497ea2d7ef30cf8783849c9791142304749d7bdf16af5b80b6e",
+  "dataset_manifest_sha256": "411cf19146c9417a42c86893bc72b4ac831b61037a08acfc08fd94392a037f31",
+  "reference_manifest_sha256": "f5e42b653ee7167ebe796c596d09417e4c19d4b5b31a1ae003ca798954876c21",
+  "scenes": 512,
+  "comparison_basis": "Paired scenes scored independently against PhysAssets static RGB/alpha, material, E, and nu ground truth",
+  "m1_m2_full_image": {
+    "mean_scene_psnr_db": {
+      "gpu": 25.49842109158635,
+      "npu": 25.519176764413714,
+      "gpu_minus_npu": -0.020755672827363014,
+      "paired_bootstrap_95pct_ci": [-0.028441223828122017, -0.013413266371935606]
+    },
+    "mean_scene_rgb_mse": {"gpu": 0.004008158461971334, "npu": 0.003998737590791279},
+    "mean_scene_alpha_mse": {"gpu": 0.007602136566219997, "npu": 0.007582500847888696},
+    "material_accuracy": {"gpu": 0.607421875, "npu": 0.609375},
+    "normalized_E_mae": {"gpu": 0.9546432690112852, "npu": 0.9546847724705003},
+    "normalized_nu_mae": {"gpu": 0.45317110235919245, "npu": 0.45286225402378477}
+  },
+  "m1_m2_fixed_pixel_sample": {
+    "pixels_per_scene": 8192,
+    "heldout_foreground": {
+      "valid_scenes": 510,
+      "mean_scene_psnr_db": {"gpu": 18.30904475850391, "npu": 18.382059340417864, "gpu_minus_npu": -0.07301458191395355},
+      "paired_bootstrap_95pct_ci": [-0.1015206973171122, -0.04534545065814594]
+    }
+  },
+  "m3_100_validation": {
+    "optimizer_steps": 100,
+    "micro_steps": 100,
+    "psnr_db": {"gpu": 23.644173622131348, "npu": 23.580021530389786},
+    "material_accuracy": {"gpu": 0.640625, "npu": 0.609375}
+  },
+  "m3_512_validation": {
+    "optimizer_steps": 1,
+    "micro_steps": 8,
+    "psnr_db": {"gpu": 18.600329384207726, "npu": 18.817328065633774}
+  },
+  "m4": {"execution_status": "passed", "independent_dynamic_gt": false, "gpu_10000_step_core_seconds": 7.029889690689743, "npu_simulation_seconds": 384.02297846700094},
+  "m5": {"execution_status": "passed", "independent_dynamic_gt": false, "replay_frames": 50, "full_chain_fixed_and_moving_videos": true},
+  "qualification": "No pre-registered equivalence margin; no GT claim for Gaussian parameters, MPM trajectory, or dynamic video. Earlier strict cross-device pixel allclose failed and is retained only as a diagnostic."
+}
